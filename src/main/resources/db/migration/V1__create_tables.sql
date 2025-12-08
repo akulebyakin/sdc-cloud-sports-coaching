@@ -1,7 +1,7 @@
 -- Flyway Migration V1: Create initial database schema for Sports Coaching Platform
 
 -- Create Coach table first (referenced by Session)
-CREATE TABLE coach (
+CREATE TABLE coaches (
     coach_id BIGINT IDENTITY(1,1) PRIMARY KEY,
     first_name NVARCHAR(100) NOT NULL,
     last_name NVARCHAR(100) NOT NULL,
@@ -13,7 +13,7 @@ CREATE TABLE coach (
 );
 
 -- Create User table (referenced by Session)
-CREATE TABLE app_user (
+CREATE TABLE app_users (
     user_id BIGINT IDENTITY(1,1) PRIMARY KEY,
     first_name NVARCHAR(100) NOT NULL,
     last_name NVARCHAR(100) NOT NULL,
@@ -21,21 +21,21 @@ CREATE TABLE app_user (
 );
 
 -- Create Session table with foreign keys
-CREATE TABLE session (
+CREATE TABLE sessions (
     session_id BIGINT IDENTITY(1,1) PRIMARY KEY,
     session_date_time DATETIME2 NOT NULL,
     session_status NVARCHAR(20) NOT NULL DEFAULT 'SCHEDULED',
     coach_id BIGINT NOT NULL,
     user_id BIGINT NOT NULL,
     rating DECIMAL(3,2) NULL,
-    CONSTRAINT fk_session_coach FOREIGN KEY (coach_id) REFERENCES coach(coach_id),
-    CONSTRAINT fk_session_user FOREIGN KEY (user_id) REFERENCES app_user(user_id),
+    CONSTRAINT fk_session_coach FOREIGN KEY (coach_id) REFERENCES coaches(coach_id),
+    CONSTRAINT fk_session_user FOREIGN KEY (user_id) REFERENCES app_users(user_id),
     CONSTRAINT chk_session_status CHECK (session_status IN ('SCHEDULED', 'COMPLETED', 'CANCELLED')),
     CONSTRAINT chk_session_rating CHECK (rating IS NULL OR (rating >= 0 AND rating <= 10))
 );
 
 -- Create indexes for better query performance
-CREATE INDEX idx_session_coach_id ON session(coach_id);
-CREATE INDEX idx_session_user_id ON session(user_id);
-CREATE INDEX idx_session_status ON session(session_status);
-CREATE INDEX idx_coach_status ON coach(coach_status);
+CREATE INDEX idx_session_coach_id ON sessions(coach_id);
+CREATE INDEX idx_session_user_id ON sessions(user_id);
+CREATE INDEX idx_session_status ON sessions(session_status);
+CREATE INDEX idx_coach_status ON coaches(coach_status);
