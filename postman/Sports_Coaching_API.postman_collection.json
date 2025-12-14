@@ -1,368 +1,492 @@
 {
 	"info": {
 		"_postman_id": "sports-coaching-api-collection",
-		"name": "Sports Coaching API",
-		"description": "API collection for Sports Coaching Platform",
+		"name": "Sports Coaching API - Microservices",
+		"description": "API collection for Sports Coaching Platform (Microservices Architecture)\n\nServices:\n- Session Service (port 8080): Users & Sessions\n- Coach Service (port 8081): Coaches\n- Review Service (port 8082): Reviews",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"variable": [
 		{
-			"key": "baseUrl",
+			"key": "sessionServiceUrl",
 			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "coachServiceUrl",
+			"value": "http://localhost:8081",
+			"type": "string"
+		},
+		{
+			"key": "reviewServiceUrl",
+			"value": "http://localhost:8082",
 			"type": "string"
 		}
 	],
 	"item": [
 		{
-			"name": "Health",
+			"name": "Session Service (8080)",
 			"item": [
 				{
-					"name": "Health Check",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{baseUrl}}/health",
-							"host": ["{{baseUrl}}"],
-							"path": ["health"]
+					"name": "Health",
+					"item": [
+						{
+							"name": "Health Check",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{sessionServiceUrl}}/health",
+									"host": ["{{sessionServiceUrl}}"],
+									"path": ["health"]
+								}
+							}
+						},
+						{
+							"name": "Actuator Health",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{sessionServiceUrl}}/actuator/health",
+									"host": ["{{sessionServiceUrl}}"],
+									"path": ["actuator", "health"]
+								}
+							}
 						}
-					}
+					]
+				},
+				{
+					"name": "Users",
+					"item": [
+						{
+							"name": "Get All Users",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{sessionServiceUrl}}/api/users",
+									"host": ["{{sessionServiceUrl}}"],
+									"path": ["api", "users"]
+								}
+							}
+						},
+						{
+							"name": "Get User by ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{sessionServiceUrl}}/api/users/1",
+									"host": ["{{sessionServiceUrl}}"],
+									"path": ["api", "users", "1"]
+								}
+							}
+						},
+						{
+							"name": "Create User",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"firstName\": \"Frank\",\n    \"lastName\": \"Foster\",\n    \"sessionsTaken\": 0\n}"
+								},
+								"url": {
+									"raw": "{{sessionServiceUrl}}/api/users",
+									"host": ["{{sessionServiceUrl}}"],
+									"path": ["api", "users"]
+								}
+							}
+						},
+						{
+							"name": "Update User",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"firstName\": \"Frank\",\n    \"lastName\": \"Foster\",\n    \"sessionsTaken\": 5\n}"
+								},
+								"url": {
+									"raw": "{{sessionServiceUrl}}/api/users/1",
+									"host": ["{{sessionServiceUrl}}"],
+									"path": ["api", "users", "1"]
+								}
+							}
+						},
+						{
+							"name": "Delete User",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{sessionServiceUrl}}/api/users/1",
+									"host": ["{{sessionServiceUrl}}"],
+									"path": ["api", "users", "1"]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "Sessions",
+					"item": [
+						{
+							"name": "Get All Sessions",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{sessionServiceUrl}}/api/sessions",
+									"host": ["{{sessionServiceUrl}}"],
+									"path": ["api", "sessions"]
+								}
+							}
+						},
+						{
+							"name": "Get Session by ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{sessionServiceUrl}}/api/sessions/1",
+									"host": ["{{sessionServiceUrl}}"],
+									"path": ["api", "sessions", "1"]
+								}
+							}
+						},
+						{
+							"name": "Get Sessions by Coach ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{sessionServiceUrl}}/api/sessions/coach/1",
+									"host": ["{{sessionServiceUrl}}"],
+									"path": ["api", "sessions", "coach", "1"]
+								}
+							}
+						},
+						{
+							"name": "Get Sessions by User ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{sessionServiceUrl}}/api/sessions/user/1",
+									"host": ["{{sessionServiceUrl}}"],
+									"path": ["api", "sessions", "user", "1"]
+								}
+							}
+						},
+						{
+							"name": "Create Session",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"userId\": 1,\n    \"coachId\": 1,\n    \"sessionDateTime\": \"2024-12-25T10:00:00\"\n}"
+								},
+								"url": {
+									"raw": "{{sessionServiceUrl}}/api/sessions",
+									"host": ["{{sessionServiceUrl}}"],
+									"path": ["api", "sessions"]
+								}
+							}
+						},
+						{
+							"name": "Update Session",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"sessionDateTime\": \"2024-12-26T14:00:00\",\n    \"sessionStatus\": \"SCHEDULED\"\n}"
+								},
+								"url": {
+									"raw": "{{sessionServiceUrl}}/api/sessions/1",
+									"host": ["{{sessionServiceUrl}}"],
+									"path": ["api", "sessions", "1"]
+								}
+							}
+						},
+						{
+							"name": "Update Session Rating (Direct)",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"rating\": 9.00\n}"
+								},
+								"url": {
+									"raw": "{{sessionServiceUrl}}/api/sessions/1/rating",
+									"host": ["{{sessionServiceUrl}}"],
+									"path": ["api", "sessions", "1", "rating"]
+								},
+								"description": "Direct rating update (bypasses Service Bus)"
+							}
+						},
+						{
+							"name": "Delete Session",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{sessionServiceUrl}}/api/sessions/1",
+									"host": ["{{sessionServiceUrl}}"],
+									"path": ["api", "sessions", "1"]
+								}
+							}
+						}
+					]
 				}
 			]
 		},
 		{
-			"name": "Coaches",
+			"name": "Coach Service (8081)",
 			"item": [
 				{
-					"name": "Get All Coaches",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{baseUrl}}/api/coaches",
-							"host": ["{{baseUrl}}"],
-							"path": ["api", "coaches"]
-						}
-					}
-				},
-				{
-					"name": "Get Coach by ID",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{baseUrl}}/api/coaches/1",
-							"host": ["{{baseUrl}}"],
-							"path": ["api", "coaches", "1"]
-						}
-					}
-				},
-				{
-					"name": "Create Coach",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
+					"name": "Health",
+					"item": [
+						{
+							"name": "Health Check",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{coachServiceUrl}}/health",
+									"host": ["{{coachServiceUrl}}"],
+									"path": ["health"]
+								}
 							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"firstName\": \"James\",\n    \"lastName\": \"Wilson\",\n    \"rating\": 7.50,\n    \"strikeCount\": 0,\n    \"coachStatus\": \"ACTIVE\"\n}"
 						},
-						"url": {
-							"raw": "{{baseUrl}}/api/coaches",
-							"host": ["{{baseUrl}}"],
-							"path": ["api", "coaches"]
-						}
-					}
-				},
-				{
-					"name": "Update Coach",
-					"request": {
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
+						{
+							"name": "Actuator Health",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{coachServiceUrl}}/actuator/health",
+									"host": ["{{coachServiceUrl}}"],
+									"path": ["actuator", "health"]
+								}
 							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"firstName\": \"James\",\n    \"lastName\": \"Wilson\",\n    \"rating\": 8.00,\n    \"strikeCount\": 0,\n    \"coachStatus\": \"ACTIVE\"\n}"
-						},
-						"url": {
-							"raw": "{{baseUrl}}/api/coaches/1",
-							"host": ["{{baseUrl}}"],
-							"path": ["api", "coaches", "1"]
 						}
-					}
+					]
 				},
 				{
-					"name": "Update Coach Rating",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
+					"name": "Coaches",
+					"item": [
+						{
+							"name": "Get All Coaches",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{coachServiceUrl}}/api/coaches",
+									"host": ["{{coachServiceUrl}}"],
+									"path": ["api", "coaches"]
+								}
 							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"coachId\": 1,\n    \"rating\": 8.75,\n    \"totalSessions\": 10\n}"
 						},
-						"url": {
-							"raw": "{{baseUrl}}/api/coaches/rating",
-							"host": ["{{baseUrl}}"],
-							"path": ["api", "coaches", "rating"]
-						}
-					}
-				},
-				{
-					"name": "Update Coach Status",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
+						{
+							"name": "Get Coach by ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{coachServiceUrl}}/api/coaches/1",
+									"host": ["{{coachServiceUrl}}"],
+									"path": ["api", "coaches", "1"]
+								}
 							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"coachId\": 1,\n    \"status\": \"DEACTIVATED\"\n}"
 						},
-						"url": {
-							"raw": "{{baseUrl}}/api/coaches/status",
-							"host": ["{{baseUrl}}"],
-							"path": ["api", "coaches", "status"]
+						{
+							"name": "Create Coach",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"firstName\": \"James\",\n    \"lastName\": \"Wilson\",\n    \"rating\": 7.50,\n    \"strikeCount\": 0,\n    \"coachStatus\": \"ACTIVE\"\n}"
+								},
+								"url": {
+									"raw": "{{coachServiceUrl}}/api/coaches",
+									"host": ["{{coachServiceUrl}}"],
+									"path": ["api", "coaches"]
+								}
+							}
+						},
+						{
+							"name": "Update Coach",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"firstName\": \"James\",\n    \"lastName\": \"Wilson\",\n    \"rating\": 8.00,\n    \"strikeCount\": 0,\n    \"coachStatus\": \"ACTIVE\"\n}"
+								},
+								"url": {
+									"raw": "{{coachServiceUrl}}/api/coaches/1",
+									"host": ["{{coachServiceUrl}}"],
+									"path": ["api", "coaches", "1"]
+								}
+							}
+						},
+						{
+							"name": "Update Coach Rating",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"coachId\": 1,\n    \"rating\": 8.75,\n    \"totalSessions\": 10\n}"
+								},
+								"url": {
+									"raw": "{{coachServiceUrl}}/api/coaches/rating",
+									"host": ["{{coachServiceUrl}}"],
+									"path": ["api", "coaches", "rating"]
+								},
+								"description": "Called by Session Service to update coach rating after session review"
+							}
+						},
+						{
+							"name": "Update Coach Status",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"coachId\": 1,\n    \"status\": \"DEACTIVATED\"\n}"
+								},
+								"url": {
+									"raw": "{{coachServiceUrl}}/api/coaches/status",
+									"host": ["{{coachServiceUrl}}"],
+									"path": ["api", "coaches", "status"]
+								}
+							}
+						},
+						{
+							"name": "Delete Coach",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{coachServiceUrl}}/api/coaches/1",
+									"host": ["{{coachServiceUrl}}"],
+									"path": ["api", "coaches", "1"]
+								}
+							}
 						}
-					}
-				},
-				{
-					"name": "Delete Coach",
-					"request": {
-						"method": "DELETE",
-						"header": [],
-						"url": {
-							"raw": "{{baseUrl}}/api/coaches/1",
-							"host": ["{{baseUrl}}"],
-							"path": ["api", "coaches", "1"]
-						}
-					}
+					]
 				}
 			]
 		},
 		{
-			"name": "Users",
+			"name": "Review Service (8082)",
 			"item": [
 				{
-					"name": "Get All Users",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{baseUrl}}/api/users",
-							"host": ["{{baseUrl}}"],
-							"path": ["api", "users"]
-						}
-					}
-				},
-				{
-					"name": "Get User by ID",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{baseUrl}}/api/users/1",
-							"host": ["{{baseUrl}}"],
-							"path": ["api", "users", "1"]
-						}
-					}
-				},
-				{
-					"name": "Create User",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
+					"name": "Health",
+					"item": [
+						{
+							"name": "Health Check",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{reviewServiceUrl}}/health",
+									"host": ["{{reviewServiceUrl}}"],
+									"path": ["health"]
+								}
 							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"firstName\": \"Frank\",\n    \"lastName\": \"Foster\",\n    \"sessionsTaken\": 0\n}"
 						},
-						"url": {
-							"raw": "{{baseUrl}}/api/users",
-							"host": ["{{baseUrl}}"],
-							"path": ["api", "users"]
-						}
-					}
-				},
-				{
-					"name": "Update User",
-					"request": {
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
+						{
+							"name": "Actuator Health",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{reviewServiceUrl}}/actuator/health",
+									"host": ["{{reviewServiceUrl}}"],
+									"path": ["actuator", "health"]
+								}
 							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"firstName\": \"Frank\",\n    \"lastName\": \"Foster\",\n    \"sessionsTaken\": 5\n}"
-						},
-						"url": {
-							"raw": "{{baseUrl}}/api/users/1",
-							"host": ["{{baseUrl}}"],
-							"path": ["api", "users", "1"]
 						}
-					}
+					]
 				},
 				{
-					"name": "Delete User",
-					"request": {
-						"method": "DELETE",
-						"header": [],
-						"url": {
-							"raw": "{{baseUrl}}/api/users/1",
-							"host": ["{{baseUrl}}"],
-							"path": ["api", "users", "1"]
-						}
-					}
-				}
-			]
-		},
-		{
-			"name": "Sessions",
-			"item": [
-				{
-					"name": "Get All Sessions",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{baseUrl}}/api/sessions",
-							"host": ["{{baseUrl}}"],
-							"path": ["api", "sessions"]
-						}
-					}
-				},
-				{
-					"name": "Get Session by ID",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{baseUrl}}/api/sessions/1",
-							"host": ["{{baseUrl}}"],
-							"path": ["api", "sessions", "1"]
-						}
-					}
-				},
-				{
-					"name": "Get Sessions by Coach ID",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{baseUrl}}/api/sessions/coach/1",
-							"host": ["{{baseUrl}}"],
-							"path": ["api", "sessions", "coach", "1"]
-						}
-					}
-				},
-				{
-					"name": "Get Sessions by User ID",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{baseUrl}}/api/sessions/user/1",
-							"host": ["{{baseUrl}}"],
-							"path": ["api", "sessions", "user", "1"]
-						}
-					}
-				},
-				{
-					"name": "Create Session",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
+					"name": "Reviews",
+					"item": [
+						{
+							"name": "Submit Review",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"sessionId\": 1,\n    \"rating\": 8.5,\n    \"comment\": \"Great coaching session!\",\n    \"coachId\": 1\n}"
+								},
+								"url": {
+									"raw": "{{reviewServiceUrl}}/api/reviews",
+									"host": ["{{reviewServiceUrl}}"],
+									"path": ["api", "reviews"]
+								},
+								"description": "Submits a review for a session. The review is sent to Azure Service Bus and processed by Session Service asynchronously."
 							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"userId\": 1,\n    \"coachId\": 1,\n    \"sessionDateTime\": \"2024-12-25T10:00:00\"\n}"
-						},
-						"url": {
-							"raw": "{{baseUrl}}/api/sessions",
-							"host": ["{{baseUrl}}"],
-							"path": ["api", "sessions"]
 						}
-					}
-				},
-				{
-					"name": "Update Session",
-					"request": {
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"sessionDateTime\": \"2024-12-26T14:00:00\",\n    \"sessionStatus\": \"SCHEDULED\"\n}"
-						},
-						"url": {
-							"raw": "{{baseUrl}}/api/sessions/1",
-							"host": ["{{baseUrl}}"],
-							"path": ["api", "sessions", "1"]
-						}
-					}
-				},
-				{
-					"name": "Update Session Rating",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"rating\": 9.00\n}"
-						},
-						"url": {
-							"raw": "{{baseUrl}}/api/sessions/1/rating",
-							"host": ["{{baseUrl}}"],
-							"path": ["api", "sessions", "1", "rating"]
-						}
-					}
-				},
-				{
-					"name": "Delete Session",
-					"request": {
-						"method": "DELETE",
-						"header": [],
-						"url": {
-							"raw": "{{baseUrl}}/api/sessions/1",
-							"host": ["{{baseUrl}}"],
-							"path": ["api", "sessions", "1"]
-						}
-					}
+					]
 				}
 			]
 		}

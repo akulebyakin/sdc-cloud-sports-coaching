@@ -54,24 +54,20 @@ sdc-cloud-sports-coaching/
 
 ## Running Locally
 
-### Option 1: Run each service individually with H2
+### Option 1: Run with H2 (no Azure required)
 
 ```bash
 # Build all modules
 mvn clean install
 
-# Run Coach Service (in terminal 1)
-cd coach-service
-mvn spring-boot:run -Dspring-boot.run.profiles=local
-
-# Run Session Service (in terminal 2)
-cd session-service
-mvn spring-boot:run -Dspring-boot.run.profiles=local
-
-# Run Review Service (in terminal 3)
-cd review-service
-mvn spring-boot:run -Dspring-boot.run.profiles=local
+# Run each service with local profile (uses H2 in-memory database)
+# Each command in a separate terminal, from the project root:
+mvn spring-boot:run -pl coach-service -Dspring-boot.run.profiles=local
+mvn spring-boot:run -pl session-service -Dspring-boot.run.profiles=local
+mvn spring-boot:run -pl review-service -Dspring-boot.run.profiles=local
 ```
+
+> **Note:** Service Bus messaging is disabled in local profile. Use direct rating endpoint for testing.
 
 ### Option 2: Run with Docker Compose (local SQL Server)
 
@@ -81,13 +77,26 @@ docker-compose -f docker-compose.local.yml up --build
 
 ## Running with Azure
 
+### Option 1: Run locally with Azure services
+
 1. Copy `.env.example` to `.env` and configure:
 ```bash
 cp .env.example .env
-# Edit .env with your Azure credentials
+# Edit .env with your Azure SQL and Service Bus credentials
+# For local dev, set: COACH_SERVICE_URL=http://localhost:8081
 ```
 
-2. Run with Docker Compose:
+2. Run from project root (required for .env loading):
+```bash
+# Load environment variables and start services
+set -a && source .env && set +a
+mvn spring-boot:run -pl coach-service &
+mvn spring-boot:run -pl session-service &
+mvn spring-boot:run -pl review-service &
+```
+
+### Option 2: Run with Docker Compose
+
 ```bash
 docker-compose up --build
 ```
@@ -130,6 +139,16 @@ docker-compose up --build
 |--------|----------|-------------|
 | GET | `/health` | Health check |
 | POST | `/api/reviews` | Submit session review |
+
+**Submit Review Request Body:**
+```json
+{
+  "sessionId": 1,
+  "rating": 8.5,
+  "comment": "Great coaching session!",
+  "coachId": 1
+}
+```
 
 ## Swagger UI
 
