@@ -1,0 +1,132 @@
+Online Sports Coaching Platform
+SessionService: Manages coaching sessions, scheduling, and user accounts.
+CoachService: Handles coach profiles, availability, and API for coach info.
+ReviewService: Collects session reviews and sends updates to SessionService via message broker.
+
+
+FUNCTIONAL REQUIREMENTS (FR)
+
+SessionService FR
+1. Create, update and delete user accounts (connect to DB and create new records, update and delete in User table)
+2. Create and update coaching sessions (connect to DB and create new records, update and delete in Session table)
+3. After receiving message from ReviewService to update rating of specific session and send POST request to Coach service with that rating alongside total count of sessions of specific Coach
+4. Create healthcheck endpoint
+
+CoachService FR
+1. Create, update (endpoint should take rating of coach and update it accordingly), delete and get coaches accounts (connect to DB and create/update/delete new records in Coach table)
+2. After receiving POST request from SessionService with session review to calculate new coach rating based on overall performance
+3. After receiving POST request from SessionService with session review if rating is lower than 2/10 then increase strikeCount by 1. If updated strikeCount is 5 then deactivate coach account
+4. After receiving POST request to update coachStatus:
+   - if it was active and request is to deactivate then set it to deactivated
+   - if it was deactivated and request is to activate
+5. Create healthcheck endpoint
+
+
+ReviewService FR
+1. Create API POST endpoint to add review for specific session, add timestamp to it and send to SessionService via message
+2. Create healthcheck endpoint
+
+
+
+
+NON-FUNCTIONAL REQUIREMENTS (NFR)
+
+SessionService NFR
+1. Service should be live 90% of time (up-time)
+2. Service should return 2**, 4** responses 9/10 times
+
+CoachService NFR
+1. Service should be live 90% of time (up-time)
+2. Service should return 2**, 4** responses 9/10 times
+
+ReviewService NFR
+1. Service should be live 90% of time (up-time)
+2. Messages should always be delivered to consumer
+
+
+
+
+DATABASE SCHEMA
+
+- User Table
+PK userId
+firstName
+lastName
+sessionsTaken
+
+- Session Table
+PK sessionId
+sessionDateTime
+sessionStatus (enum: scheduled, completed, cancelled)
+coachId (FK to Coach table)
+userId (FK to User table)
+rating
+
+- Coach Table
+PK coachId
+firstName
+lastName
+rating
+strikeCount
+coachStatus (enum: active, deactivated)
+
+- SessionStatus enum
+scheduled
+completed
+cancelled
+
+- CoachStatus enum
+active
+deactivated
+
+
+
+
+
+SERVICES COMMUNICATION
+
+SessionService <-> User Schema (Database)
+- CRUD operations on User table
+
+SessionService <-> Session Schema (Database)
+- CRUD operations on Session table
+
+SessionService -> CoachService
+- API POST endpoint to update coach rating based on feedback
+
+SessionService <-> ReviewService
+- Message through Service Bus Queue (Azure Service Bus)
+- ReviewService sends session review data to SessionService
+
+CoachService <-> Coach Schema (Database)
+- CRUD operations on Coach table
+
+ReviewService -> SessionService
+- API POST endpoint with info about session and its rating
+- Communication via Azure Service Bus Queue
+
+
+
+
+API ENDPOINTS
+
+- SessionService Endpoints
+POST /api/users - Create/update User data
+DELETE /api/users/{userId} - Delete user
+POST /api/sessions - Create/update Session data
+DELETE /api/sessions/{sessionId} - Delete session
+GET /health - Health check endpoint
+
+- CoachService Endpoints
+POST /api/coaches - Create/update Coach data
+GET /api/coaches/{coachId} - Get coach information
+DELETE /api/coaches/{coachId} - Delete coach
+POST /api/coaches/rating - Update coach rating
+POST /api/coaches/status - Update coach status
+GET /health - Health check endpoint
+
+- ReviewService Endpoints
+POST /api/reviews - Submit session review
+GET /health - Health check endpoint
+
+

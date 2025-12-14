@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: review-service
+
+  cloud:
+    azure:
+      servicebus:
+        connection-string: ${AZURE_SERVICEBUS_CONNECTION_STRING:}
+    stream:
+      bindings:
+        supply-out-0:
+          destination: reviews-queue
+      servicebus:
+        bindings:
+          supply-out-0:
+            producer:
+              entity-type: queue
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+server:
+  port: ${SERVER_PORT:8082}
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    com.kulebiakin: DEBUG
+    com.azure: INFO
