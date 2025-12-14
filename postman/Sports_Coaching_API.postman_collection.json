@@ -243,14 +243,14 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"rating\": 9.00\n}"
+									"raw": "{\n    \"rating\": 9.00,\n    \"comment\": \"Excellent coaching session!\"\n}"
 								},
 								"url": {
 									"raw": "{{sessionServiceUrl}}/api/sessions/1/rating",
 									"host": ["{{sessionServiceUrl}}"],
 									"path": ["api", "sessions", "1", "rating"]
 								},
-								"description": "Direct rating update (bypasses Service Bus)"
+								"description": "Direct rating update (bypasses Service Bus). Comment is optional."
 							}
 						},
 						{

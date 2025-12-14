@@ -66,17 +66,17 @@ public class SessionService {
         return sessionRepository.save(session);
     }
 
-    public Session updateSessionRating(Long sessionId, BigDecimal rating) {
-        return sessionRatingService.updateSessionRating(sessionId, rating);
+    public Session updateSessionRating(Long sessionId, BigDecimal rating, String comment) {
+        return sessionRatingService.updateSessionRating(sessionId, rating, comment);
     }
 
     /**
      * Process a review message received from ReviewService via Azure Service Bus.
-     * Updates the session rating and notifies CoachService.
+     * Updates the session rating, review comment, and notifies CoachService.
      */
-    public void processReview(Long sessionId, BigDecimal rating) {
-        log.info("Processing review for session {}: rating={}", sessionId, rating);
-        sessionRatingService.updateSessionRating(sessionId, rating);
+    public void processReview(Long sessionId, BigDecimal rating, String comment) {
+        log.info("Processing review for session {}: rating={}, comment={}", sessionId, rating, comment);
+        sessionRatingService.updateSessionRating(sessionId, rating, comment);
         log.info("Successfully processed review for session {}", sessionId);
     }
 

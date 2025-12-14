@@ -45,6 +45,9 @@ public class Session {
 
     @DecimalMin(value = "0.0", message = "Rating must be at least 0")
     @DecimalMax(value = "10.0", message = "Rating must not exceed 10")
-    @Column(name = "rating", precision = 3, scale = 2)
+    @Column(name = "rating", precision = 4, scale = 2)
     private BigDecimal rating;
+
+    @Column(name = "review_comment", length = 1000)
+    private String reviewComment;
 }

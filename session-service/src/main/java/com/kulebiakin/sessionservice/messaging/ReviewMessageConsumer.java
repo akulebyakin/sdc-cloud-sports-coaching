@@ -29,10 +29,11 @@ public class ReviewMessageConsumer {
 
                 ReviewMessage reviewMessage = objectMapper.readValue(payload, ReviewMessage.class);
 
-                // Process the review - update session rating and notify coach service
+                // Process the review - update session rating, comment, and notify coach service
                 sessionService.processReview(
                         reviewMessage.getSessionId(),
-                        reviewMessage.getRating()
+                        reviewMessage.getRating(),
+                        reviewMessage.getComment()
                 );
 
                 log.info("Successfully processed review for session {}", reviewMessage.getSessionId());

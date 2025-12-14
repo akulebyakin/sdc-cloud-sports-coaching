@@ -78,8 +78,9 @@ public class SessionController {
     @Operation(summary = "Rate a completed session")
     public ResponseEntity<Session> updateSessionRating(@PathVariable Long sessionId, @RequestBody Map<String, Object> payload) {
         BigDecimal rating = new BigDecimal(payload.get("rating").toString());
-        log.info("POST /api/sessions/{}/rating - Updating session rating to {}", sessionId, rating);
-        return ResponseEntity.ok(sessionService.updateSessionRating(sessionId, rating));
+        String comment = payload.containsKey("comment") ? payload.get("comment").toString() : null;
+        log.info("POST /api/sessions/{}/rating - Updating session rating to {} with comment: {}", sessionId, rating, comment);
+        return ResponseEntity.ok(sessionService.updateSessionRating(sessionId, rating, comment));
     }
 
     @DeleteMapping("/{sessionId}")

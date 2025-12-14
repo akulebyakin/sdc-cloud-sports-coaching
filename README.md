@@ -172,6 +172,7 @@ docker-compose up --build
 - `coach_id` - Reference to coach (in coach_db)
 - `user_id` - Foreign key to app_users
 - `rating` - Session rating (0-10)
+- `review_comment` - Optional review comment
 
 ### Coach Service Database (coach_db)
 

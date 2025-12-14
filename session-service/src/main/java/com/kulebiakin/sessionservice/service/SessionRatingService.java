@@ -22,11 +22,12 @@ public class SessionRatingService {
     private final CoachServiceClient coachServiceClient;
 
     @Transactional
-    public Session updateSessionRating(Long sessionId, BigDecimal rating) {
-        log.debug("Updating rating for session id: {} to {}", sessionId, rating);
+    public Session updateSessionRating(Long sessionId, BigDecimal rating, String comment) {
+        log.debug("Updating rating for session id: {} to {} with comment: {}", sessionId, rating, comment);
         Session session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Session", sessionId));
         session.setRating(rating);
+        session.setReviewComment(comment);
         session.setSessionStatus(SessionStatus.COMPLETED);
 
         Session savedSession = sessionRepository.save(session);
