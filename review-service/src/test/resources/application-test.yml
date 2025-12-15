@@ -1,0 +1,8 @@
+spring:
+  cloud:
+    azure:
+      servicebus:
+        enabled: false
+    stream:
+      function:
+        definition: supply
