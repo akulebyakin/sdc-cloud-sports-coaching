@@ -7,20 +7,10 @@ pool:
 steps:
 - script: |
     set -e
-
-    echo "Agent info:"
-    uname -a || true
-
-    echo "Java:"
     java -version
-
-    echo "Maven Wrapper:"
-    chmod +x ./mvnw
-    ./mvnw -v
-
-    echo "Run tests:"
-    ./mvnw -B clean test
-  displayName: 'Run unit tests (Maven Wrapper)'
+    mvn -version
+    mvn -B clean test
+  displayName: 'Run unit tests (system Maven)'
 
 - task: PublishTestResults@2
   displayName: 'Publish JUnit test results'
