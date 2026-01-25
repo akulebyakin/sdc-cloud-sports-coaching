@@ -5,13 +5,27 @@ pool:
   name: 'self-hosted'
 
 steps:
-- task: Maven@4
-  displayName: 'Run unit tests'
+- script: |
+    set -e
+
+    echo "Agent info:"
+    uname -a || true
+
+    echo "Java:"
+    java -version
+
+    echo "Maven Wrapper:"
+    chmod +x ./mvnw
+    ./mvnw -v
+
+    echo "Run tests:"
+    ./mvnw -B clean test
+  displayName: 'Run unit tests (Maven Wrapper)'
+
+- task: PublishTestResults@2
+  displayName: 'Publish JUnit test results'
+  condition: succeededOrFailed()
   inputs:
-    mavenPomFile: 'pom.xml'
-    goals: 'clean test'
-    publishJUnitResults: true
-    testResultsFiles: '**/surefire-reports/TEST-*.xml'
-    javaHomeOption: 'JDKVersion'
-    jdkVersionOption: '17'
-    mavenVersionOption: 'Default'
+    testResultsFormat: 'JUnit'
+    testResultsFiles: '**/target/surefire-reports/TEST-*.xml'
+    failTaskOnFailedTests: true
