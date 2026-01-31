@@ -8,9 +8,8 @@ pool:
   name: 'self-hosted'
 
 variables:
-  # === REQUIRED ===
   # Name of Azure DevOps Service Connection (Project settings -> Service connections)
-  azureSubscription: 'YOUR_SERVICE_CONNECTION_NAME'
+  azureSubscription: 'sc-azure-sdc'
 
   # Azure resource names
   resourceGroup: 'sdc-sports-coaching-rg'
