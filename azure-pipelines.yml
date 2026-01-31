@@ -2,190 +2,201 @@
 # Builds, tests, and deploys 3 microservices to Azure Web Apps
 
 trigger:
-- main
+  - main
 
 pool:
   name: 'self-hosted'
 
 variables:
-  # Build configuration
-  MAVEN_CACHE_FOLDER: $(HOME)/.m2/repository
-  JAVA_HOME_17: /usr/lib/jvm/java-17-openjdk
+  # === REQUIRED ===
+  # Name of Azure DevOps Service Connection (Project settings -> Service connections)
+  azureSubscription: 'YOUR_SERVICE_CONNECTION_NAME'
 
-  # Azure resource names (override in pipeline variables for different environments)
+  # Azure resource names
   resourceGroup: 'sdc-sports-coaching-rg'
   coachServiceName: 'sdc-coach-service'
   sessionServiceName: 'sdc-session-service'
   reviewServiceName: 'sdc-review-service'
 
+  # If your App Service Plan is Windows, set to webApp.
+  # If Linux, set to webAppLinux.
+  appType: 'webAppLinux'
+
+  # Health endpoint (change to /health if you don’t use actuator)
+  healthPath: '/actuator/health'
+
+  # Maven cache folder (works on macOS/Linux self-hosted)
+  MAVEN_CACHE_FOLDER: '$(HOME)/.m2/repository'
+
 stages:
-# =============================================================================
-# Stage 1: Build and Test
-# =============================================================================
-- stage: Build
-  displayName: 'Build and Test'
-  jobs:
-  - job: BuildAndTest
-    displayName: 'Build, Test, and Package'
-    steps:
-    - script: |
-        set -e
-        echo "Java version:"
-        java -version
-        echo "Maven version:"
-        mvn -version
-      displayName: 'Display build environment'
+  # =============================================================================
+  # Stage 1: Build and Test
+  # =============================================================================
+  - stage: Build
+    displayName: 'Build and Test'
+    jobs:
+      - job: BuildAndTest
+        displayName: 'Build, Test, and Package'
+        steps:
+          - script: |
+              set -e
+              echo "OS info:"
+              uname -a || true
+              echo "Java version:"
+              java -version
+              echo "Maven version:"
+              mvn -version
+            displayName: 'Display build environment'
 
-    - script: |
-        set -e
-        mvn -B clean compile
-      displayName: 'Compile all modules'
+          # Optional but recommended: cache Maven dependencies
+          - task: Cache@2
+            displayName: 'Cache Maven local repo'
+            inputs:
+              key: 'maven | "$(Agent.OS)" | **/pom.xml'
+              restoreKeys: |
+                maven | "$(Agent.OS)"
+              path: '$(MAVEN_CACHE_FOLDER)'
 
-    - script: |
-        set -e
-        mvn -B test
-      displayName: 'Run unit tests'
+          # One command is faster + more deterministic
+          - script: |
+              set -e
+              mvn -B clean test package
+            displayName: 'Build + run unit tests + package'
 
-    - task: PublishTestResults@2
-      displayName: 'Publish JUnit test results'
-      condition: succeededOrFailed()
-      inputs:
-        testResultsFormat: 'JUnit'
-        testResultsFiles: '**/target/surefire-reports/TEST-*.xml'
-        failTaskOnFailedTests: true
-        testRunTitle: 'Unit Tests'
+          - task: PublishTestResults@2
+            displayName: 'Publish JUnit test results'
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: '**/target/surefire-reports/TEST-*.xml'
+              failTaskOnFailedTests: true
+              testRunTitle: 'Unit Tests'
 
-    - script: |
-        set -e
-        mvn -B package -DskipTests
-      displayName: 'Package applications'
+          # Collect jars (exclude sources/javadoc/original)
+          - task: CopyFiles@2
+            displayName: 'Copy coach-service JAR'
+            inputs:
+              sourceFolder: 'coach-service/target'
+              contents: |
+                *.jar
+                !*sources.jar
+                !*javadoc.jar
+                !original-*.jar
+              targetFolder: '$(Build.ArtifactStagingDirectory)/coach-service'
+              flattenFolders: true
 
-    - task: CopyFiles@2
-      displayName: 'Copy coach-service JAR'
-      inputs:
-        sourceFolder: 'coach-service/target'
-        contents: 'coach-service-*.jar'
-        targetFolder: '$(Build.ArtifactStagingDirectory)/coach-service'
-        flattenFolders: true
+          - task: CopyFiles@2
+            displayName: 'Copy session-service JAR'
+            inputs:
+              sourceFolder: 'session-service/target'
+              contents: |
+                *.jar
+                !*sources.jar
+                !*javadoc.jar
+                !original-*.jar
+              targetFolder: '$(Build.ArtifactStagingDirectory)/session-service'
+              flattenFolders: true
 
-    - task: CopyFiles@2
-      displayName: 'Copy session-service JAR'
-      inputs:
-        sourceFolder: 'session-service/target'
-        contents: 'session-service-*.jar'
-        targetFolder: '$(Build.ArtifactStagingDirectory)/session-service'
-        flattenFolders: true
+          - task: CopyFiles@2
+            displayName: 'Copy review-service JAR'
+            inputs:
+              sourceFolder: 'review-service/target'
+              contents: |
+                *.jar
+                !*sources.jar
+                !*javadoc.jar
+                !original-*.jar
+              targetFolder: '$(Build.ArtifactStagingDirectory)/review-service'
+              flattenFolders: true
 
-    - task: CopyFiles@2
-      displayName: 'Copy review-service JAR'
-      inputs:
-        sourceFolder: 'review-service/target'
-        contents: 'review-service-*.jar'
-        targetFolder: '$(Build.ArtifactStagingDirectory)/review-service'
-        flattenFolders: true
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish build artifacts'
+            inputs:
+              pathToPublish: '$(Build.ArtifactStagingDirectory)'
+              artifactName: 'services'
+              publishLocation: 'Container'
 
-    - task: PublishBuildArtifacts@1
-      displayName: 'Publish build artifacts'
-      inputs:
-        pathToPublish: '$(Build.ArtifactStagingDirectory)'
-        artifactName: 'services'
-        publishLocation: 'Container'
-
-# =============================================================================
-# Stage 2: Deploy to Azure Web Apps
-# =============================================================================
-- stage: Deploy
-  displayName: 'Deploy to Azure'
-  dependsOn: Build
-  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
-  jobs:
-  - deployment: DeployCoachService
-    displayName: 'Deploy Coach Service'
-    environment: 'production'
-    strategy:
-      runOnce:
-        deploy:
-          steps:
+  # =============================================================================
+  # Stage 2: Deploy to Azure Web Apps
+  # =============================================================================
+  - stage: Deploy
+    displayName: 'Deploy to Azure'
+    dependsOn: Build
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      # Using normal jobs instead of "deployment + environment"
+      # avoids environment-approval / permission prompts in many setups.
+      - job: DeployCoachService
+        displayName: 'Deploy Coach Service'
+        steps:
           - download: current
             artifact: services
 
           - task: AzureWebApp@1
-            displayName: 'Deploy to Azure Web App'
+            displayName: 'Deploy coach-service to Azure Web App'
             inputs:
               azureSubscription: '$(azureSubscription)'
-              appType: 'webAppLinux'
+              appType: '$(appType)'
               appName: '$(coachServiceName)'
               resourceGroupName: '$(resourceGroup)'
               package: '$(Pipeline.Workspace)/services/coach-service/*.jar'
-              runtimeStack: 'JAVA|17-java17'
-              startUpCommand: ''
 
-  - deployment: DeploySessionService
-    displayName: 'Deploy Session Service'
-    environment: 'production'
-    strategy:
-      runOnce:
-        deploy:
-          steps:
+      - job: DeploySessionService
+        displayName: 'Deploy Session Service'
+        dependsOn: DeployCoachService
+        steps:
           - download: current
             artifact: services
 
           - task: AzureWebApp@1
-            displayName: 'Deploy to Azure Web App'
+            displayName: 'Deploy session-service to Azure Web App'
             inputs:
               azureSubscription: '$(azureSubscription)'
-              appType: 'webAppLinux'
+              appType: '$(appType)'
               appName: '$(sessionServiceName)'
               resourceGroupName: '$(resourceGroup)'
               package: '$(Pipeline.Workspace)/services/session-service/*.jar'
-              runtimeStack: 'JAVA|17-java17'
-              startUpCommand: ''
 
-  - deployment: DeployReviewService
-    displayName: 'Deploy Review Service'
-    environment: 'production'
-    strategy:
-      runOnce:
-        deploy:
-          steps:
+      - job: DeployReviewService
+        displayName: 'Deploy Review Service'
+        dependsOn: DeploySessionService
+        steps:
           - download: current
             artifact: services
 
           - task: AzureWebApp@1
-            displayName: 'Deploy to Azure Web App'
+            displayName: 'Deploy review-service to Azure Web App'
             inputs:
               azureSubscription: '$(azureSubscription)'
-              appType: 'webAppLinux'
+              appType: '$(appType)'
               appName: '$(reviewServiceName)'
               resourceGroupName: '$(resourceGroup)'
               package: '$(Pipeline.Workspace)/services/review-service/*.jar'
-              runtimeStack: 'JAVA|17-java17'
-              startUpCommand: ''
 
-# =============================================================================
-# Stage 3: Post-Deployment Verification
-# =============================================================================
-- stage: Verify
-  displayName: 'Verify Deployment'
-  dependsOn: Deploy
-  condition: succeeded()
-  jobs:
-  - job: HealthCheck
-    displayName: 'Health Check Services'
-    steps:
-    - script: |
-        set -e
-        echo "Waiting for services to start..."
-        sleep 60
-
-        echo "Checking Coach Service health..."
-        curl -f --retry 5 --retry-delay 10 https://$(coachServiceName).azurewebsites.net/health || exit 1
-
-        echo "Checking Session Service health..."
-        curl -f --retry 5 --retry-delay 10 https://$(sessionServiceName).azurewebsites.net/health || exit 1
-
-        echo "Checking Review Service health..."
-        curl -f --retry 5 --retry-delay 10 https://$(reviewServiceName).azurewebsites.net/health || exit 1
-
-        echo "All services are healthy!"
-      displayName: 'Verify service health endpoints'
+  # =============================================================================
+  # Stage 3: Post-Deployment Verification
+  # =============================================================================
+  - stage: Verify
+    displayName: 'Verify Deployment'
+    dependsOn: Deploy
+    condition: succeeded()
+    jobs:
+      - job: HealthCheck
+        displayName: 'Health Check Services'
+        steps:
+          - script: |
+              set -e
+              echo "Waiting for services to start..."
+              sleep 60
+              
+              echo "Checking Coach Service health..."
+              curl -f --retry 10 --retry-delay 10 "https://$(coachServiceName).azurewebsites.net$(healthPath)"
+              
+              echo "Checking Session Service health..."
+              curl -f --retry 10 --retry-delay 10 "https://$(sessionServiceName).azurewebsites.net$(healthPath)"
+              
+              echo "Checking Review Service health..."
+              curl -f --retry 10 --retry-delay 10 "https://$(reviewServiceName).azurewebsites.net$(healthPath)"
+              
+              echo "All services are healthy!"
+            displayName: 'Verify service health endpoints'
