@@ -125,6 +125,7 @@ stages:
           - task: AzureWebApp@1
             displayName: 'Deploy coach-service to Azure Web App'
             inputs:
+              azureSubscription: '$(azureSubscription)'
               appName: '$(coachServiceName)'
               package: '$(Pipeline.Workspace)/services/coach-service/*.jar'
               publishProfile: '$(coachPublishProfile)'
@@ -139,6 +140,7 @@ stages:
           - task: AzureWebApp@1
             displayName: 'Deploy session-service to Azure Web App'
             inputs:
+              azureSubscription: '$(azureSubscription)'
               appName: '$(sessionServiceName)'
               package: '$(Pipeline.Workspace)/services/session-service/*.jar'
               publishProfile: '$(sessionPublishProfile)'
@@ -153,6 +155,7 @@ stages:
           - task: AzureWebApp@1
             displayName: 'Deploy review-service to Azure Web App'
             inputs:
+              azureSubscription: '$(azureSubscription)'
               appName: '$(reviewServiceName)'
               package: '$(Pipeline.Workspace)/services/review-service/*.jar'
               publishProfile: '$(reviewPublishProfile)'
