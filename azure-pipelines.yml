@@ -12,7 +12,7 @@ variables:
   azureSubscription: 'sc-azure-sdc'
 
   # Azure resource names
-  resourceGroup: 'sdc-sports-coaching-rg'
+  resourceGroup: 'sdc-resource-group'
   coachServiceName: 'sdc-coach-service'
   sessionServiceName: 'sdc-session-service'
   reviewServiceName: 'sdc-review-service'
@@ -21,8 +21,8 @@ variables:
   # If Linux, set to webAppLinux.
   appType: 'webAppLinux'
 
-  # Health endpoint (change to /health if you don’t use actuator)
-  healthPath: '/actuator/health'
+  # Health endpoint (services expose /health)
+  healthPath: '/health'
 
   # Publish Profiles (define these as SECRET pipeline variables in Azure DevOps)
   coachPublishProfile: '$(COACH_PUBLISH_PROFILE)'
@@ -126,6 +126,7 @@ stages:
             displayName: 'Deploy coach-service to Azure Web App'
             inputs:
               azureSubscription: '$(azureSubscription)'
+              appType: '$(appType)'
               appName: '$(coachServiceName)'
               package: '$(Pipeline.Workspace)/services/coach-service/*.jar'
               publishProfile: '$(coachPublishProfile)'
@@ -141,6 +142,7 @@ stages:
             displayName: 'Deploy session-service to Azure Web App'
             inputs:
               azureSubscription: '$(azureSubscription)'
+              appType: '$(appType)'
               appName: '$(sessionServiceName)'
               package: '$(Pipeline.Workspace)/services/session-service/*.jar'
               publishProfile: '$(sessionPublishProfile)'
@@ -156,6 +158,7 @@ stages:
             displayName: 'Deploy review-service to Azure Web App'
             inputs:
               azureSubscription: '$(azureSubscription)'
+              appType: '$(appType)'
               appName: '$(reviewServiceName)'
               package: '$(Pipeline.Workspace)/services/review-service/*.jar'
               publishProfile: '$(reviewPublishProfile)'
@@ -171,19 +174,49 @@ stages:
       - job: HealthCheck
         displayName: 'Health Check Services'
         steps:
+          - task: AzureCLI@2
+            displayName: 'Resolve App Service hostnames + verify state'
+            inputs:
+              azureSubscription: '$(azureSubscription)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                set -euo pipefail
+                echo "Checking App Service state in resource group: $(resourceGroup)"
+
+                resolve_app() {
+                  local name="$1"
+                  local var_name="$2"
+                  local state
+                  local host
+                  state="$(az webapp show --resource-group "$(resourceGroup)" --name "$name" --query state -o tsv)"
+                  host="$(az webapp show --resource-group "$(resourceGroup)" --name "$name" --query defaultHostName -o tsv)"
+                  echo "App Service $name state: $state"
+                  if [ "$state" != "Running" ]; then
+                    echo "Expected $name to be Running, got: $state"
+                    exit 1
+                  fi
+                  echo "Resolved hostname for $name: $host"
+                  echo "##vso[task.setvariable variable=${var_name}]$host"
+                }
+
+                resolve_app "$(coachServiceName)" "coachHost"
+                resolve_app "$(sessionServiceName)" "sessionHost"
+                resolve_app "$(reviewServiceName)" "reviewHost"
+
           - script: |
               set -e
               echo "Waiting for services to start..."
               sleep 60
 
               echo "Checking Coach Service health..."
-              curl -f --retry 10 --retry-delay 10 "https://$(coachServiceName).azurewebsites.net$(healthPath)"
+              curl -f --retry 10 --retry-delay 10 "https://$(coachHost)$(healthPath)"
 
               echo "Checking Session Service health..."
-              curl -f --retry 10 --retry-delay 10 "https://$(sessionServiceName).azurewebsites.net$(healthPath)"
+              curl -f --retry 10 --retry-delay 10 "https://$(sessionHost)$(healthPath)"
 
               echo "Checking Review Service health..."
-              curl -f --retry 10 --retry-delay 10 "https://$(reviewServiceName).azurewebsites.net$(healthPath)"
+              curl -f --retry 10 --retry-delay 10 "https://$(reviewHost)$(healthPath)"
 
               echo "All services are healthy!"
             displayName: 'Verify service health endpoints'
