@@ -21,8 +21,8 @@ variables:
   # If Linux, set to webAppLinux.
   appType: 'webAppLinux'
 
-  # Health endpoint (change to /health if you don’t use actuator)
-  healthPath: '/actuator/health'
+  # Health endpoint (services expose /health)
+  healthPath: '/health'
 
   # Publish Profiles (define these as SECRET pipeline variables in Azure DevOps)
   coachPublishProfile: '$(COACH_PUBLISH_PROFILE)'
@@ -126,6 +126,7 @@ stages:
             displayName: 'Deploy coach-service to Azure Web App'
             inputs:
               azureSubscription: '$(azureSubscription)'
+              appType: '$(appType)'
               appName: '$(coachServiceName)'
               package: '$(Pipeline.Workspace)/services/coach-service/*.jar'
               publishProfile: '$(coachPublishProfile)'
@@ -141,6 +142,7 @@ stages:
             displayName: 'Deploy session-service to Azure Web App'
             inputs:
               azureSubscription: '$(azureSubscription)'
+              appType: '$(appType)'
               appName: '$(sessionServiceName)'
               package: '$(Pipeline.Workspace)/services/session-service/*.jar'
               publishProfile: '$(sessionPublishProfile)'
@@ -156,6 +158,7 @@ stages:
             displayName: 'Deploy review-service to Azure Web App'
             inputs:
               azureSubscription: '$(azureSubscription)'
+              appType: '$(appType)'
               appName: '$(reviewServiceName)'
               package: '$(Pipeline.Workspace)/services/review-service/*.jar'
               publishProfile: '$(reviewPublishProfile)'
