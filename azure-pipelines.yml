@@ -17,6 +17,11 @@ variables:
   sessionServiceName: 'sdc-session-service'
   reviewServiceName: 'sdc-review-service'
 
+  # Override these if your App Service default hostnames differ from <app>.azurewebsites.net
+  coachHost: '$(coachServiceName).azurewebsites.net'
+  sessionHost: '$(sessionServiceName).azurewebsites.net'
+  reviewHost: '$(reviewServiceName).azurewebsites.net'
+
   # If your App Service Plan is Windows, set to webApp.
   # If Linux, set to webAppLinux.
   appType: 'webAppLinux'
