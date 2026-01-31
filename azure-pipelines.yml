@@ -11,7 +11,7 @@ variables:
   # Name of Azure DevOps Service Connection (Project settings -> Service connections)
   azureSubscription: 'sc-azure-sdc'
 
-  # Azure resource names (MUST match Web App resource names exactly)
+  # Azure resource names
   resourceGroup: 'sdc-sports-coaching-rg'
   coachServiceName: 'sdc-coach-service'
   sessionServiceName: 'sdc-session-service'
