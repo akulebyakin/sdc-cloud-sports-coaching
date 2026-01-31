@@ -47,15 +47,6 @@ stages:
               mvn -version
             displayName: 'Display build environment'
 
-          # Optional but recommended: cache Maven dependencies
-          - task: Cache@2
-            displayName: 'Cache Maven local repo'
-            inputs:
-              key: 'maven | "$(Agent.OS)" | **/pom.xml'
-              restoreKeys: |
-                maven | "$(Agent.OS)"
-              path: '$(MAVEN_CACHE_FOLDER)'
-
           # One command is faster + more deterministic
           - script: |
               set -e
