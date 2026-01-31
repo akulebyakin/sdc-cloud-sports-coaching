@@ -38,6 +38,5 @@ build/
 ### Mac OS ###
 .DS_Store
 /.idea/
-/.mvn/
 .env
 application-local.yml

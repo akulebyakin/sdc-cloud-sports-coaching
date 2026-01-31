@@ -1,39 +1,47 @@
 package com.kulebiakin.reviewservice.messaging;
 
+import com.azure.storage.queue.QueueClient;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kulebiakin.common.dto.ReviewMessage;
 import com.kulebiakin.common.exception.MessageProcessingException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.stereotype.Component;
 
+import java.util.Base64;
+
+/**
+ * Sends review messages to Azure Storage Queue.
+ * Messages are Base64 encoded as required by Azure Storage Queue.
+ */
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class ReviewMessageProducer {
 
-    private final StreamBridge streamBridge;
+    private final QueueClient reviewEventsQueueClient;
     private final ObjectMapper objectMapper;
-
-    private static final String OUTPUT_BINDING = "supply-out-0";
 
     public void sendReviewMessage(ReviewMessage reviewMessage) {
         try {
             String messageJson = objectMapper.writeValueAsString(reviewMessage);
-            log.info("Sending review message to Service Bus: {}", messageJson);
+            // Azure Storage Queue requires Base64 encoding for message content
+            String encodedMessage = Base64.getEncoder().encodeToString(messageJson.getBytes());
 
-            boolean sent = streamBridge.send(OUTPUT_BINDING, messageJson);
+            log.info("Sending review message to Storage Queue: {}", messageJson);
 
-            if (sent) {
-                log.info("Successfully sent review message for session {}", reviewMessage.getSessionId());
-            } else {
-                log.error("Failed to send review message for session {}", reviewMessage.getSessionId());
-            }
+            var result = reviewEventsQueueClient.sendMessage(encodedMessage);
+
+            log.info("Successfully sent review message for session {}, messageId: {}",
+                    reviewMessage.getSessionId(), result.getMessageId());
+
         } catch (JsonProcessingException e) {
             log.error("Error serializing review message: {}", e.getMessage(), e);
             throw new MessageProcessingException("Failed to serialize review message", e);
+        } catch (Exception e) {
+            log.error("Error sending message to queue: {}", e.getMessage(), e);
+            throw new MessageProcessingException("Failed to send review message to queue", e);
         }
     }
 }

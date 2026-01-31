@@ -2,28 +2,27 @@ spring:
   application:
     name: review-service
 
-  cloud:
-    azure:
-      servicebus:
-        connection-string: ${AZURE_SERVICEBUS_CONNECTION_STRING:}
-    stream:
-      bindings:
-        supply-out-0:
-          destination: reviews-queue
-      servicebus:
-        bindings:
-          supply-out-0:
-            producer:
-              entity-type: queue
+azure:
+  storage:
+    connection-string: ${AZURE_STORAGE_CONNECTION_STRING:}
+    queue:
+      review-events: review-events
+      app-logs: app-logs
 
 management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       show-details: always
+    prometheus:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
 
 server:
   port: ${SERVER_PORT:8082}

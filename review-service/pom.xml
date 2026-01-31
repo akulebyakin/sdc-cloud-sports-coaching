@@ -34,14 +34,16 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
-        <!-- Azure Service Bus for sending messages -->
+        <!-- Azure Storage Queue for sending messages -->
         <dependency>
-            <groupId>com.azure.spring</groupId>
-            <artifactId>spring-cloud-azure-starter-servicebus</artifactId>
+            <groupId>com.azure</groupId>
+            <artifactId>azure-storage-queue</artifactId>
         </dependency>
+
+        <!-- Prometheus Metrics -->
         <dependency>
-            <groupId>com.azure.spring</groupId>
-            <artifactId>spring-cloud-azure-stream-binder-servicebus</artifactId>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
         </dependency>
 
         <!-- OpenAPI -->

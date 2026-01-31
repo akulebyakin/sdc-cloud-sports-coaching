@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- Get Azure connection string from Spring properties -->
+    <springProperty name="AZURE_CONN" source="azure.storage.connection-string" defaultValue=""/>
+
+    <!-- Console Appender -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Azure Storage Queue Appender -->
+    <appender name="AZURE_QUEUE" class="com.kulebiakin.common.logging.AzureQueueAppender">
+        <connectionString>${AZURE_CONN}</connectionString>
+        <queueName>app-logs</queueName>
+        <applicationName>review-service</applicationName>
+    </appender>
+
+    <!-- Async wrapper for Azure Queue to prevent blocking -->
+    <appender name="ASYNC_AZURE" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="AZURE_QUEUE"/>
+        <queueSize>500</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <neverBlock>true</neverBlock>
+    </appender>
+
+    <!-- Root logger -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="ASYNC_AZURE"/>
+    </root>
+
+    <!-- Application specific loggers -->
+    <logger name="com.kulebiakin" level="DEBUG"/>
+    <logger name="com.azure" level="INFO"/>
+</configuration>
