@@ -12,17 +12,22 @@ variables:
   azureSubscription: 'sc-azure-sdc'
 
   # Azure resource names
-  resourceGroup: 'sdc-sports-coaching-rg'
+  resourceGroup: 'sdc-resource-group'
   coachServiceName: 'sdc-coach-service'
   sessionServiceName: 'sdc-session-service'
   reviewServiceName: 'sdc-review-service'
+
+  # Override these if your App Service default hostnames differ from <app>.azurewebsites.net
+  coachHost: '$(coachServiceName).azurewebsites.net'
+  sessionHost: '$(sessionServiceName).azurewebsites.net'
+  reviewHost: '$(reviewServiceName).azurewebsites.net'
 
   # If your App Service Plan is Windows, set to webApp.
   # If Linux, set to webAppLinux.
   appType: 'webAppLinux'
 
-  # Health endpoint (change to /health if you don’t use actuator)
-  healthPath: '/actuator/health'
+  # Health endpoint (services expose /health)
+  healthPath: '/health'
 
   # Publish Profiles (define these as SECRET pipeline variables in Azure DevOps)
   coachPublishProfile: '$(COACH_PUBLISH_PROFILE)'
@@ -126,6 +131,7 @@ stages:
             displayName: 'Deploy coach-service to Azure Web App'
             inputs:
               azureSubscription: '$(azureSubscription)'
+              appType: '$(appType)'
               appName: '$(coachServiceName)'
               package: '$(Pipeline.Workspace)/services/coach-service/*.jar'
               publishProfile: '$(coachPublishProfile)'
@@ -141,6 +147,7 @@ stages:
             displayName: 'Deploy session-service to Azure Web App'
             inputs:
               azureSubscription: '$(azureSubscription)'
+              appType: '$(appType)'
               appName: '$(sessionServiceName)'
               package: '$(Pipeline.Workspace)/services/session-service/*.jar'
               publishProfile: '$(sessionPublishProfile)'
@@ -156,6 +163,7 @@ stages:
             displayName: 'Deploy review-service to Azure Web App'
             inputs:
               azureSubscription: '$(azureSubscription)'
+              appType: '$(appType)'
               appName: '$(reviewServiceName)'
               package: '$(Pipeline.Workspace)/services/review-service/*.jar'
               publishProfile: '$(reviewPublishProfile)'
@@ -177,13 +185,13 @@ stages:
               sleep 60
 
               echo "Checking Coach Service health..."
-              curl -f --retry 10 --retry-delay 10 "https://$(coachServiceName).azurewebsites.net$(healthPath)"
+              curl -f --retry 10 --retry-delay 10 "https://$(coachHost)$(healthPath)"
 
               echo "Checking Session Service health..."
-              curl -f --retry 10 --retry-delay 10 "https://$(sessionServiceName).azurewebsites.net$(healthPath)"
+              curl -f --retry 10 --retry-delay 10 "https://$(sessionHost)$(healthPath)"
 
               echo "Checking Review Service health..."
-              curl -f --retry 10 --retry-delay 10 "https://$(reviewServiceName).azurewebsites.net$(healthPath)"
+              curl -f --retry 10 --retry-delay 10 "https://$(reviewHost)$(healthPath)"
 
               echo "All services are healthy!"
             displayName: 'Verify service health endpoints'
