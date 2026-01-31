@@ -11,7 +11,7 @@ variables:
   # Name of Azure DevOps Service Connection (Project settings -> Service connections)
   azureSubscription: 'sc-azure-sdc'
 
-  # Azure resource names
+  # Azure resource names (MUST match Web App resource names exactly)
   resourceGroup: 'sdc-sports-coaching-rg'
   coachServiceName: 'sdc-coach-service'
   sessionServiceName: 'sdc-session-service'
@@ -24,13 +24,13 @@ variables:
   # Health endpoint (change to /health if you don’t use actuator)
   healthPath: '/actuator/health'
 
-  # Maven cache folder (works on macOS/Linux self-hosted)
-  MAVEN_CACHE_FOLDER: '$(HOME)/.m2/repository'
+  # Publish Profiles (define these as SECRET pipeline variables in Azure DevOps)
+  coachPublishProfile: '$(COACH_PUBLISH_PROFILE)'
+  sessionPublishProfile: '$(SESSION_PUBLISH_PROFILE)'
+  reviewPublishProfile: '$(REVIEW_PUBLISH_PROFILE)'
 
 stages:
-  # =============================================================================
   # Stage 1: Build and Test
-  # =============================================================================
   - stage: Build
     displayName: 'Build and Test'
     jobs:
@@ -125,11 +125,9 @@ stages:
           - task: AzureWebApp@1
             displayName: 'Deploy coach-service to Azure Web App'
             inputs:
-              azureSubscription: '$(azureSubscription)'
-              appType: '$(appType)'
               appName: '$(coachServiceName)'
-              resourceGroupName: '$(resourceGroup)'
               package: '$(Pipeline.Workspace)/services/coach-service/*.jar'
+              publishProfile: '$(coachPublishProfile)'
 
       - job: DeploySessionService
         displayName: 'Deploy Session Service'
@@ -141,11 +139,9 @@ stages:
           - task: AzureWebApp@1
             displayName: 'Deploy session-service to Azure Web App'
             inputs:
-              azureSubscription: '$(azureSubscription)'
-              appType: '$(appType)'
               appName: '$(sessionServiceName)'
-              resourceGroupName: '$(resourceGroup)'
               package: '$(Pipeline.Workspace)/services/session-service/*.jar'
+              publishProfile: '$(sessionPublishProfile)'
 
       - job: DeployReviewService
         displayName: 'Deploy Review Service'
@@ -157,11 +153,9 @@ stages:
           - task: AzureWebApp@1
             displayName: 'Deploy review-service to Azure Web App'
             inputs:
-              azureSubscription: '$(azureSubscription)'
-              appType: '$(appType)'
               appName: '$(reviewServiceName)'
-              resourceGroupName: '$(resourceGroup)'
               package: '$(Pipeline.Workspace)/services/review-service/*.jar'
+              publishProfile: '$(reviewPublishProfile)'
 
   # =============================================================================
   # Stage 3: Post-Deployment Verification
@@ -178,15 +172,15 @@ stages:
               set -e
               echo "Waiting for services to start..."
               sleep 60
-              
+
               echo "Checking Coach Service health..."
               curl -f --retry 10 --retry-delay 10 "https://$(coachServiceName).azurewebsites.net$(healthPath)"
-              
+
               echo "Checking Session Service health..."
               curl -f --retry 10 --retry-delay 10 "https://$(sessionServiceName).azurewebsites.net$(healthPath)"
-              
+
               echo "Checking Review Service health..."
               curl -f --retry 10 --retry-delay 10 "https://$(reviewServiceName).azurewebsites.net$(healthPath)"
-              
+
               echo "All services are healthy!"
             displayName: 'Verify service health endpoints'
