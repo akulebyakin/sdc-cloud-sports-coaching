@@ -14,7 +14,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Base64;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -59,7 +58,7 @@ class ReviewMessageProducerTest {
     }
 
     @Test
-    void sendReviewMessage_sendsBase64EncodedMessage() throws Exception {
+    void sendReviewMessage_sendsJsonMessage() throws Exception {
         ReviewMessage reviewMessage = ReviewMessage.builder()
             .sessionId(1L)
             .rating(BigDecimal.valueOf(8.5))
@@ -72,11 +71,11 @@ class ReviewMessageProducerTest {
         when(mockResult.getMessageId()).thenReturn("msg-123");
         when(reviewEventsQueueClient.sendMessage(anyString())).thenAnswer(invocation -> {
             String message = invocation.getArgument(0);
-            // Verify it's base64 encoded
-            byte[] decoded = Base64.getDecoder().decode(message);
-            String json = new String(decoded);
-            // If we get here without exception, it's valid base64
-            assert json.contains("\"sessionId\"");
+            // Verify it's valid JSON with expected fields
+            // SDK handles Base64 encoding when QueueMessageEncoding.BASE64 is configured
+            assert message.contains("\"sessionId\"");
+            assert message.contains("\"rating\"");
+            assert message.contains("\"coachId\"");
             return mockResult;
         });
 
