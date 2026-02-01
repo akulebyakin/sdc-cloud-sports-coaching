@@ -2,6 +2,7 @@ package com.kulebiakin.common.queue;
 
 import com.azure.storage.queue.QueueClient;
 import com.azure.storage.queue.QueueClientBuilder;
+import com.azure.storage.queue.QueueMessageEncoding;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.context.annotation.Bean;
@@ -30,6 +31,7 @@ public class AzureQueueConfig {
         return new QueueClientBuilder()
                 .connectionString(connectionString)
                 .queueName(reviewEventsQueueName)
+                .messageEncoding(QueueMessageEncoding.BASE64)
                 .buildClient();
     }
 
@@ -38,6 +40,7 @@ public class AzureQueueConfig {
         return new QueueClientBuilder()
                 .connectionString(connectionString)
                 .queueName(appLogsQueueName)
+                .messageEncoding(QueueMessageEncoding.BASE64)
                 .buildClient();
     }
 }

@@ -24,10 +24,8 @@ variables:
   # Health endpoint (services expose /health)
   healthPath: '/health'
 
-  # Publish Profiles (define these as SECRET pipeline variables in Azure DevOps)
-  coachPublishProfile: '$(COACH_PUBLISH_PROFILE)'
-  sessionPublishProfile: '$(SESSION_PUBLISH_PROFILE)'
-  reviewPublishProfile: '$(REVIEW_PUBLISH_PROFILE)'
+  # Note: Using azureSubscription service connection for authentication
+  # Publish profiles are not needed when service connection is configured
 
 stages:
   # Stage 1: Build and Test
@@ -129,7 +127,6 @@ stages:
               appType: '$(appType)'
               appName: '$(coachServiceName)'
               package: '$(Pipeline.Workspace)/services/coach-service/*.jar'
-              publishProfile: '$(coachPublishProfile)'
 
       - job: DeploySessionService
         displayName: 'Deploy Session Service'
@@ -145,7 +142,6 @@ stages:
               appType: '$(appType)'
               appName: '$(sessionServiceName)'
               package: '$(Pipeline.Workspace)/services/session-service/*.jar'
-              publishProfile: '$(sessionPublishProfile)'
 
       - job: DeployReviewService
         displayName: 'Deploy Review Service'
@@ -161,7 +157,6 @@ stages:
               appType: '$(appType)'
               appName: '$(reviewServiceName)'
               package: '$(Pipeline.Workspace)/services/review-service/*.jar'
-              publishProfile: '$(reviewPublishProfile)'
 
   # =============================================================================
   # Stage 3: Post-Deployment Verification
@@ -206,17 +201,23 @@ stages:
 
           - script: |
               set -e
-              echo "Waiting for services to start..."
-              sleep 60
+              echo "Waiting for services to start (Java apps need ~3-4 minutes)..."
+              sleep 180
 
-              echo "Checking Coach Service health..."
-              curl -f --retry 10 --retry-delay 10 "https://$(coachHost)$(healthPath)"
+              check_health() {
+                local name="$1"
+                local url="$2"
+                echo "Checking $name health at $url..."
+                curl -sf --retry 15 --retry-delay 15 --retry-all-errors --max-time 30 "$url" && echo " OK" || {
+                  echo "FAILED: $name health check"
+                  return 1
+                }
+              }
 
-              echo "Checking Session Service health..."
-              curl -f --retry 10 --retry-delay 10 "https://$(sessionHost)$(healthPath)"
+              check_health "Coach Service" "https://$(coachHost)$(healthPath)"
+              check_health "Session Service" "https://$(sessionHost)$(healthPath)"
+              check_health "Review Service" "https://$(reviewHost)$(healthPath)"
 
-              echo "Checking Review Service health..."
-              curl -f --retry 10 --retry-delay 10 "https://$(reviewHost)$(healthPath)"
-
+              echo ""
               echo "All services are healthy!"
             displayName: 'Verify service health endpoints'

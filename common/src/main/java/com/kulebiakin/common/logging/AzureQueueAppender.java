@@ -4,9 +4,9 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.AppenderBase;
 import com.azure.storage.queue.QueueClient;
 import com.azure.storage.queue.QueueClientBuilder;
+import com.azure.storage.queue.QueueMessageEncoding;
 
 import java.time.Instant;
-import java.util.Base64;
 
 /**
  * Custom Logback Appender that sends log messages to Azure Storage Queue.
@@ -29,6 +29,7 @@ public class AzureQueueAppender extends AppenderBase<ILoggingEvent> {
             queueClient = new QueueClientBuilder()
                     .connectionString(connectionString)
                     .queueName(queueName)
+                    .messageEncoding(QueueMessageEncoding.BASE64)
                     .buildClient();
             super.start();
             addInfo("Azure Queue Appender started for queue: " + queueName);
@@ -54,8 +55,7 @@ public class AzureQueueAppender extends AppenderBase<ILoggingEvent> {
                     event.getThreadName()
             );
 
-            String encodedMessage = Base64.getEncoder().encodeToString(json.getBytes());
-            queueClient.sendMessage(encodedMessage);
+            queueClient.sendMessage(json);
         } catch (Exception e) {
             addError("Failed to send log message to Azure Storage Queue", e);
         }

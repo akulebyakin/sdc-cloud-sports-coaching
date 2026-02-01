@@ -9,11 +9,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.util.Base64;
-
 /**
  * Sends review messages to Azure Storage Queue.
- * Messages are Base64 encoded as required by Azure Storage Queue.
+ * The SDK handles Base64 encoding when QueueMessageEncoding.BASE64 is configured.
  */
 @Component
 @RequiredArgsConstructor
@@ -26,12 +24,10 @@ public class ReviewMessageProducer {
     public void sendReviewMessage(ReviewMessage reviewMessage) {
         try {
             String messageJson = objectMapper.writeValueAsString(reviewMessage);
-            // Azure Storage Queue requires Base64 encoding for message content
-            String encodedMessage = Base64.getEncoder().encodeToString(messageJson.getBytes());
 
             log.info("Sending review message to Storage Queue: {}", messageJson);
 
-            var result = reviewEventsQueueClient.sendMessage(encodedMessage);
+            var result = reviewEventsQueueClient.sendMessage(messageJson);
 
             log.info("Successfully sent review message for session {}, messageId: {}",
                     reviewMessage.getSessionId(), result.getMessageId());
