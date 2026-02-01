@@ -14,7 +14,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 
@@ -93,7 +92,7 @@ class ReviewMessageConsumerTest {
     }
 
     @Test
-    void reviewMessage_base64EncodeDecode_roundTrip() throws Exception {
+    void reviewMessage_jsonSerialization_roundTrip() throws Exception {
         ReviewMessage original = ReviewMessage.builder()
             .sessionId(1L)
             .rating(BigDecimal.valueOf(8.5))
@@ -103,11 +102,9 @@ class ReviewMessageConsumerTest {
             .build();
 
         String json = objectMapper.writeValueAsString(original);
-        String base64 = Base64.getEncoder().encodeToString(json.getBytes());
 
-        // Simulate what happens in processMessage
-        String decoded = new String(Base64.getDecoder().decode(base64));
-        ReviewMessage deserialized = objectMapper.readValue(decoded, ReviewMessage.class);
+        // Simulate what happens in processMessage - direct JSON parsing
+        ReviewMessage deserialized = objectMapper.readValue(json, ReviewMessage.class);
 
         assert deserialized.getSessionId().equals(original.getSessionId());
         assert deserialized.getRating().compareTo(original.getRating()) == 0;

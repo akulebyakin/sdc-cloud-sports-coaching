@@ -2,6 +2,7 @@ package com.kulebiakin.common.logging;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.AppenderBase;
+import com.azure.core.util.BinaryData;
 import com.azure.storage.queue.QueueClient;
 import com.azure.storage.queue.QueueClientBuilder;
 import com.azure.storage.queue.QueueMessageEncoding;
@@ -31,6 +32,8 @@ public class AzureQueueAppender extends AppenderBase<ILoggingEvent> {
                     .queueName(queueName)
                     .messageEncoding(QueueMessageEncoding.BASE64)
                     .buildClient();
+            // Create queue if it doesn't exist
+            queueClient.createIfNotExists();
             super.start();
             addInfo("Azure Queue Appender started for queue: " + queueName);
         } catch (Exception e) {
@@ -55,7 +58,7 @@ public class AzureQueueAppender extends AppenderBase<ILoggingEvent> {
                     event.getThreadName()
             );
 
-            queueClient.sendMessage(json);
+            queueClient.sendMessage(BinaryData.fromString(json));
         } catch (Exception e) {
             addError("Failed to send log message to Azure Storage Queue", e);
         }

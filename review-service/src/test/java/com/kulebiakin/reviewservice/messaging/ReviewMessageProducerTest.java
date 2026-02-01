@@ -1,5 +1,6 @@
 package com.kulebiakin.reviewservice.messaging;
 
+import com.azure.core.util.BinaryData;
 import com.azure.storage.queue.QueueClient;
 import com.azure.storage.queue.models.SendMessageResult;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,7 +18,7 @@ import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -50,11 +51,11 @@ class ReviewMessageProducerTest {
 
         SendMessageResult mockResult = mock(SendMessageResult.class);
         when(mockResult.getMessageId()).thenReturn("msg-123");
-        when(reviewEventsQueueClient.sendMessage(anyString())).thenReturn(mockResult);
+        when(reviewEventsQueueClient.sendMessage(any(BinaryData.class))).thenReturn(mockResult);
 
         reviewMessageProducer.sendReviewMessage(reviewMessage);
 
-        verify(reviewEventsQueueClient).sendMessage(anyString());
+        verify(reviewEventsQueueClient).sendMessage(any(BinaryData.class));
     }
 
     @Test
@@ -69,10 +70,10 @@ class ReviewMessageProducerTest {
 
         SendMessageResult mockResult = mock(SendMessageResult.class);
         when(mockResult.getMessageId()).thenReturn("msg-123");
-        when(reviewEventsQueueClient.sendMessage(anyString())).thenAnswer(invocation -> {
-            String message = invocation.getArgument(0);
+        when(reviewEventsQueueClient.sendMessage(any(BinaryData.class))).thenAnswer(invocation -> {
+            BinaryData binaryData = invocation.getArgument(0);
+            String message = binaryData.toString();
             // Verify it's valid JSON with expected fields
-            // SDK handles Base64 encoding when QueueMessageEncoding.BASE64 is configured
             assert message.contains("\"sessionId\"");
             assert message.contains("\"rating\"");
             assert message.contains("\"coachId\"");
@@ -81,7 +82,7 @@ class ReviewMessageProducerTest {
 
         reviewMessageProducer.sendReviewMessage(reviewMessage);
 
-        verify(reviewEventsQueueClient).sendMessage(anyString());
+        verify(reviewEventsQueueClient).sendMessage(any(BinaryData.class));
     }
 
     @Test
@@ -93,7 +94,7 @@ class ReviewMessageProducerTest {
             .timestamp(LocalDateTime.now())
             .build();
 
-        when(reviewEventsQueueClient.sendMessage(anyString()))
+        when(reviewEventsQueueClient.sendMessage(any(BinaryData.class)))
             .thenThrow(new RuntimeException("Connection error"));
 
         assertThatThrownBy(() -> reviewMessageProducer.sendReviewMessage(reviewMessage))
@@ -113,11 +114,11 @@ class ReviewMessageProducerTest {
 
         SendMessageResult mockResult = mock(SendMessageResult.class);
         when(mockResult.getMessageId()).thenReturn("msg-456");
-        when(reviewEventsQueueClient.sendMessage(anyString())).thenReturn(mockResult);
+        when(reviewEventsQueueClient.sendMessage(any(BinaryData.class))).thenReturn(mockResult);
 
         assertThatCode(() -> reviewMessageProducer.sendReviewMessage(reviewMessage))
             .doesNotThrowAnyException();
 
-        verify(reviewEventsQueueClient).sendMessage(anyString());
+        verify(reviewEventsQueueClient).sendMessage(any(BinaryData.class));
     }
 }

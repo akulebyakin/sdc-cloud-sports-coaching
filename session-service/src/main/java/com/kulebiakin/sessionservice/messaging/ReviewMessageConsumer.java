@@ -15,7 +15,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
-import java.util.Base64;
 
 /**
  * Polls Azure Storage Queue for review messages and processes them.
@@ -67,13 +66,11 @@ public class ReviewMessageConsumer {
         String popReceipt = message.getPopReceipt();
 
         try {
-            // Decode Base64 message
-            String decodedPayload = new String(
-                    Base64.getDecoder().decode(message.getBody().toString())
-            );
-            log.info("Received review message: {}", decodedPayload);
+            // Get message body as string (BinaryData handles encoding)
+            String payload = message.getBody().toString();
+            log.info("Received review message: {}", payload);
 
-            ReviewMessage reviewMessage = objectMapper.readValue(decodedPayload, ReviewMessage.class);
+            ReviewMessage reviewMessage = objectMapper.readValue(payload, ReviewMessage.class);
 
             // Process the review - update session rating, comment, and notify coach service
             sessionService.processReview(
