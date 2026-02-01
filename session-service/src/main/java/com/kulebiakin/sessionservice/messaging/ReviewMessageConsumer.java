@@ -1,93 +1,90 @@
 package com.kulebiakin.sessionservice.messaging;
 
-import com.azure.core.util.Context;
-import com.azure.storage.queue.QueueClient;
-import com.azure.storage.queue.models.QueueMessageItem;
+import com.azure.messaging.servicebus.ServiceBusClientBuilder;
+import com.azure.messaging.servicebus.ServiceBusErrorContext;
+import com.azure.messaging.servicebus.ServiceBusProcessorClient;
+import com.azure.messaging.servicebus.ServiceBusReceivedMessageContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kulebiakin.common.dto.ReviewMessage;
 import com.kulebiakin.sessionservice.service.SessionService;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
-import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
-import java.time.Duration;
-
 /**
- * Polls Azure Storage Queue for review messages and processes them.
- * Uses @Scheduled for periodic polling instead of push-based Service Bus.
+ * Consumes review messages from Azure Service Bus queue using push-based processing.
  */
 @Component
-@EnableScheduling
-@ConditionalOnExpression("!'${azure.storage.connection-string:}'.isEmpty()")
+@ConditionalOnProperty(name = "azure.servicebus.connection-string")
 @RequiredArgsConstructor
 @Slf4j
 public class ReviewMessageConsumer {
 
-    private final QueueClient reviewEventsQueueClient;
     private final SessionService sessionService;
     private final ObjectMapper objectMapper;
 
-    @Value("${azure.storage.queue.visibility-timeout-seconds:30}")
-    private int visibilityTimeoutSeconds;
+    @Value("${azure.servicebus.connection-string}")
+    private String connectionString;
 
-    @Value("${azure.storage.queue.max-messages:10}")
-    private int maxMessages;
+    @Value("${azure.servicebus.queue-name:reviews-queue}")
+    private String queueName;
 
-    /**
-     * Polls the review-events queue for new messages.
-     * Default interval is 5 seconds, configurable via azure.storage.queue.poll-interval-ms
-     */
-    @Scheduled(fixedDelayString = "${azure.storage.queue.poll-interval-ms:5000}")
-    public void pollMessages() {
-        log.debug("Polling review-events queue...");
+    private ServiceBusProcessorClient processorClient;
 
-        try {
-            Iterable<QueueMessageItem> messages = reviewEventsQueueClient.receiveMessages(
-                    maxMessages,
-                    Duration.ofSeconds(visibilityTimeoutSeconds),
-                    Duration.ofSeconds(30),
-                    Context.NONE
-            );
+    @PostConstruct
+    public void start() {
+        log.info("Starting Service Bus processor for queue: {}", queueName);
 
-            for (QueueMessageItem message : messages) {
-                processMessage(message);
-            }
-        } catch (Exception e) {
-            log.error("Error polling messages from queue: {}", e.getMessage(), e);
+        processorClient = new ServiceBusClientBuilder()
+                .connectionString(connectionString)
+                .processor()
+                .queueName(queueName)
+                .processMessage(this::processMessage)
+                .processError(this::processError)
+                .buildProcessorClient();
+
+        processorClient.start();
+        log.info("Service Bus processor started successfully");
+    }
+
+    @PreDestroy
+    public void stop() {
+        if (processorClient != null) {
+            log.info("Stopping Service Bus processor");
+            processorClient.close();
         }
     }
 
-    private void processMessage(QueueMessageItem message) {
-        String messageId = message.getMessageId();
-        String popReceipt = message.getPopReceipt();
-
+    private void processMessage(ServiceBusReceivedMessageContext context) {
+        String messageId = context.getMessage().getMessageId();
         try {
-            // Get message body as string (BinaryData handles encoding)
-            String payload = message.getBody().toString();
-            log.info("Received review message: {}", payload);
+            String payload = context.getMessage().getBody().toString();
+            log.info("Received review message from Service Bus: {}", payload);
 
             ReviewMessage reviewMessage = objectMapper.readValue(payload, ReviewMessage.class);
 
-            // Process the review - update session rating, comment, and notify coach service
             sessionService.processReview(
                     reviewMessage.getSessionId(),
                     reviewMessage.getRating(),
                     reviewMessage.getComment()
             );
 
-            // Delete message from queue after successful processing
-            reviewEventsQueueClient.deleteMessage(messageId, popReceipt);
-
-            log.info("Successfully processed and deleted message for session {}",
-                    reviewMessage.getSessionId());
+            context.complete();
+            log.info("Successfully processed message for session {}", reviewMessage.getSessionId());
 
         } catch (Exception e) {
             log.error("Error processing review message {}: {}", messageId, e.getMessage(), e);
-            // Message will become visible again after visibility timeout for retry
+            context.abandon();
         }
+    }
+
+    private void processError(ServiceBusErrorContext context) {
+        log.error("Service Bus error: {} - {}",
+                context.getErrorSource(),
+                context.getException().getMessage());
     }
 }

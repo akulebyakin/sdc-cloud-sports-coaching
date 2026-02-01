@@ -33,21 +33,10 @@
             <artifactId>jackson-databind</artifactId>
         </dependency>
 
-        <!-- Azure Storage Queue -->
+        <!-- Azure Service Bus -->
         <dependency>
             <groupId>com.azure</groupId>
-            <artifactId>azure-storage-queue</artifactId>
-        </dependency>
-        <!-- Azure Core (required for TokenCredentialTrait) -->
-        <dependency>
-            <groupId>com.azure</groupId>
-            <artifactId>azure-core</artifactId>
-        </dependency>
-
-        <!-- Logback for custom appender -->
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
+            <artifactId>azure-messaging-servicebus</artifactId>
         </dependency>
     </dependencies>
 

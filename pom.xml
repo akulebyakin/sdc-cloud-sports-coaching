@@ -34,7 +34,6 @@
         <springdoc.version>2.3.0</springdoc.version>
         <spring-cloud-azure.version>5.8.0</spring-cloud-azure.version>
         <azure-messaging-servicebus.version>7.15.0</azure-messaging-servicebus.version>
-        <azure-storage-queue.version>12.21.0</azure-storage-queue.version>
     </properties>
 
     <repositories>
@@ -69,11 +68,11 @@
                 <version>${springdoc.version}</version>
             </dependency>
 
-            <!-- Azure Storage Queue -->
+            <!-- Azure Service Bus -->
             <dependency>
                 <groupId>com.azure</groupId>
-                <artifactId>azure-storage-queue</artifactId>
-                <version>${azure-storage-queue.version}</version>
+                <artifactId>azure-messaging-servicebus</artifactId>
+                <version>${azure-messaging-servicebus.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

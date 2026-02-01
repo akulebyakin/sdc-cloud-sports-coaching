@@ -1,8 +1,7 @@
 package com.kulebiakin.reviewservice.messaging;
 
-import com.azure.core.util.BinaryData;
-import com.azure.storage.queue.QueueClient;
-import com.azure.storage.queue.models.SendMessageResult;
+import com.azure.messaging.servicebus.ServiceBusMessage;
+import com.azure.messaging.servicebus.ServiceBusSenderClient;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.kulebiakin.common.dto.ReviewMessage;
@@ -19,15 +18,14 @@ import java.time.LocalDateTime;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class ReviewMessageProducerTest {
 
     @Mock
-    private QueueClient reviewEventsQueueClient;
+    private ServiceBusSenderClient serviceBusSenderClient;
 
     private ObjectMapper objectMapper;
     private ReviewMessageProducer reviewMessageProducer;
@@ -36,11 +34,11 @@ class ReviewMessageProducerTest {
     void setUp() {
         objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
-        reviewMessageProducer = new ReviewMessageProducer(reviewEventsQueueClient, objectMapper);
+        reviewMessageProducer = new ReviewMessageProducer(serviceBusSenderClient, objectMapper);
     }
 
     @Test
-    void sendReviewMessage_success_sendsToQueue() throws Exception {
+    void sendReviewMessage_success_sendsToServiceBus() {
         ReviewMessage reviewMessage = ReviewMessage.builder()
             .sessionId(1L)
             .rating(BigDecimal.valueOf(8.5))
@@ -49,44 +47,13 @@ class ReviewMessageProducerTest {
             .timestamp(LocalDateTime.now())
             .build();
 
-        SendMessageResult mockResult = mock(SendMessageResult.class);
-        when(mockResult.getMessageId()).thenReturn("msg-123");
-        when(reviewEventsQueueClient.sendMessage(any(BinaryData.class))).thenReturn(mockResult);
-
         reviewMessageProducer.sendReviewMessage(reviewMessage);
 
-        verify(reviewEventsQueueClient).sendMessage(any(BinaryData.class));
+        verify(serviceBusSenderClient).sendMessage(any(ServiceBusMessage.class));
     }
 
     @Test
-    void sendReviewMessage_sendsJsonMessage() throws Exception {
-        ReviewMessage reviewMessage = ReviewMessage.builder()
-            .sessionId(1L)
-            .rating(BigDecimal.valueOf(8.5))
-            .comment("Test")
-            .coachId(1L)
-            .timestamp(LocalDateTime.now())
-            .build();
-
-        SendMessageResult mockResult = mock(SendMessageResult.class);
-        when(mockResult.getMessageId()).thenReturn("msg-123");
-        when(reviewEventsQueueClient.sendMessage(any(BinaryData.class))).thenAnswer(invocation -> {
-            BinaryData binaryData = invocation.getArgument(0);
-            String message = binaryData.toString();
-            // Verify it's valid JSON with expected fields
-            assert message.contains("\"sessionId\"");
-            assert message.contains("\"rating\"");
-            assert message.contains("\"coachId\"");
-            return mockResult;
-        });
-
-        reviewMessageProducer.sendReviewMessage(reviewMessage);
-
-        verify(reviewEventsQueueClient).sendMessage(any(BinaryData.class));
-    }
-
-    @Test
-    void sendReviewMessage_queueError_throwsMessageProcessingException() {
+    void sendReviewMessage_serviceBusError_throwsMessageProcessingException() {
         ReviewMessage reviewMessage = ReviewMessage.builder()
             .sessionId(1L)
             .rating(BigDecimal.valueOf(8.5))
@@ -94,8 +61,8 @@ class ReviewMessageProducerTest {
             .timestamp(LocalDateTime.now())
             .build();
 
-        when(reviewEventsQueueClient.sendMessage(any(BinaryData.class)))
-            .thenThrow(new RuntimeException("Connection error"));
+        doThrow(new RuntimeException("Connection error"))
+            .when(serviceBusSenderClient).sendMessage(any(ServiceBusMessage.class));
 
         assertThatThrownBy(() -> reviewMessageProducer.sendReviewMessage(reviewMessage))
             .isInstanceOf(MessageProcessingException.class)
@@ -103,7 +70,7 @@ class ReviewMessageProducerTest {
     }
 
     @Test
-    void sendReviewMessage_nullComment_succeeds() throws Exception {
+    void sendReviewMessage_nullComment_succeeds() {
         ReviewMessage reviewMessage = ReviewMessage.builder()
             .sessionId(1L)
             .rating(BigDecimal.valueOf(7.0))
@@ -112,13 +79,9 @@ class ReviewMessageProducerTest {
             .timestamp(LocalDateTime.now())
             .build();
 
-        SendMessageResult mockResult = mock(SendMessageResult.class);
-        when(mockResult.getMessageId()).thenReturn("msg-456");
-        when(reviewEventsQueueClient.sendMessage(any(BinaryData.class))).thenReturn(mockResult);
-
         assertThatCode(() -> reviewMessageProducer.sendReviewMessage(reviewMessage))
             .doesNotThrowAnyException();
 
-        verify(reviewEventsQueueClient).sendMessage(any(BinaryData.class));
+        verify(serviceBusSenderClient).sendMessage(any(ServiceBusMessage.class));
     }
 }

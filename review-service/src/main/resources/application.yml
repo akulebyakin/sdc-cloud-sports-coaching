@@ -3,11 +3,9 @@ spring:
     name: review-service
 
 azure:
-  storage:
-    connection-string: ${AZURE_STORAGE_CONNECTION_STRING:}
-    queue:
-      review-events: review-events
-      app-logs: app-logs
+  servicebus:
+    connection-string: ${AZURE_SERVICEBUS_CONNECTION_STRING:}
+    queue-name: reviews-queue
 
 management:
   endpoints:

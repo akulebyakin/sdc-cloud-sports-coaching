@@ -23,14 +23,9 @@ spring:
     locations: classpath:db/migration
 
 azure:
-  storage:
-    connection-string: ${AZURE_STORAGE_CONNECTION_STRING:}
-    queue:
-      review-events: review-events
-      app-logs: app-logs
-      poll-interval-ms: 5000
-      visibility-timeout-seconds: 30
-      max-messages: 10
+  servicebus:
+    connection-string: ${AZURE_SERVICEBUS_CONNECTION_STRING:}
+    queue-name: reviews-queue
 
 coach-service:
   url: ${COACH_SERVICE_URL:http://localhost:8081}
